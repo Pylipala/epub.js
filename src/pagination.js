@@ -7,12 +7,15 @@ EPUBJS.Pagination = function(pageList) {
 	}
 };
 
+
+//从这个处理函数看，这个Pagination对象装的应该是一章的页，而不是整本书的
+//因为它用最后页码来减第一页的页码，问题是为什么没有加一呢？
 EPUBJS.Pagination.prototype.process = function(pageList){
 	pageList.forEach(function(item){
 		this.pages.push(item.page);
 		this.locations.push(item.cfi);
 	}, this);
-	
+
 	this.pageList = pageList;
 	this.firstPage = parseInt(this.pages[0]);
 	this.lastPage = parseInt(this.pages[this.pages.length-1]);
@@ -21,12 +24,12 @@ EPUBJS.Pagination.prototype.process = function(pageList){
 
 EPUBJS.Pagination.prototype.pageFromCfi = function(cfi){
 	var pg = -1;
-	
+
 	// Check if the pageList has not been set yet
 	if(this.locations.length === 0) {
 		return -1;
 	}
-	
+
 	// TODO: check if CFI is valid?
 
 	// check if the cfi is in the location list
