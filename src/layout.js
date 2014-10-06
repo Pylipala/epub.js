@@ -1,3 +1,5 @@
+//今天读到这里，感觉知道它是如何分页的了。就是通过浏览器的多栏布局来分页，所以才会除以宽带，我说呢。
+
 EPUBJS.Layout = EPUBJS.Layout || {};
 
 EPUBJS.Layout.Reflowable = function(){
