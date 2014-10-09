@@ -7,6 +7,7 @@ EPUBJS.Layout.Reflowable = function(){
 	this.spreadWidth = null;
 };
 
+//记下documentElement，并设置它的style
 EPUBJS.Layout.Reflowable.prototype.format = function(documentElement, _width, _height, _gap){
 	// Get the prefixed CSS commands
 	var columnAxis = EPUBJS.core.prefixed('columnAxis');
@@ -46,6 +47,8 @@ EPUBJS.Layout.Reflowable.prototype.format = function(documentElement, _width, _h
 	};
 };
 
+//改变documentElement的width样式为auto，来得到滚动内容宽度，除以一页的宽度得到页数
+//奇怪，为啥没有把样式改回去呀
 EPUBJS.Layout.Reflowable.prototype.calculatePages = function() {
 	var totalWidth, displayedPages;
 	this.documentElement.style.width = "auto"; //-- reset width for calculations
@@ -126,6 +129,7 @@ EPUBJS.Layout.Fixed = function(){
 
 EPUBJS.Layout.Fixed = function(documentElement, _width, _height, _gap){
 	var columnWidth = EPUBJS.core.prefixed('columnWidth');
+	//确定这里没有少打一个反中括号？
 	var viewport = documentElement.querySelector("[name=viewport");
 	var content;
 	var contents;
