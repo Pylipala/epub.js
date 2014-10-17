@@ -9,6 +9,7 @@ EPUBJS.filePath = EPUBJS.filePath || "/epubjs/";
 
 EPUBJS.Render = {};
 
+//导出ePub构造函数
 (function(root) {
 
 	var previousEpub = root.ePub || {};

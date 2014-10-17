@@ -49,6 +49,7 @@ EPUBJS.Book = function(options){
 	//-- Get pre-registered hooks for events
 	// this.getHooks("beforeChapterDisplay");
 
+ //原来浏览器里面判断是否联网这么容易啊navigator.onLine就可以了
 	this.online = this.settings.online || navigator.onLine;
 	this.networkListeners();
 
@@ -84,6 +85,7 @@ EPUBJS.Book = function(options){
 
 	this.ready.all = RSVP.all(this.readyPromises);
 
+  //ready里面的事情全部搞定之后，调用_ready()
 	this.ready.all.then(this._ready.bind(this));
 
 	// Queue for methods used before rendering
@@ -510,11 +512,11 @@ EPUBJS.Book.prototype.listenToRenderer = function(renderer){
 EPUBJS.Book.prototype.loadChange = function(url){
 	var uri = EPUBJS.core.uri(url);
 	var chapter;
-	
+
 	if(this.currentChapter) {
 		chapter = EPUBJS.core.uri(this.currentChapter.absolute);
 	}
-	
+
 	if(!this._rendering && this.currentChapter && uri.path != chapter.path){
 		console.warn("Miss Match", uri.path, this.currentChapter.absolute);
 		this.goto(uri.filename);
@@ -1069,13 +1071,13 @@ EPUBJS.Book.prototype.fromStorage = function(stored) {
 
 EPUBJS.Book.prototype.setStyle = function(style, val, prefixed) {
 	var noreflow = ["color", "background", "background-color"];
-	
+
 	if(!this.isRendered) return this._q.enqueue("setStyle", arguments);
 
 	this.settings.styles[style] = val;
 
 	this.renderer.setStyle(style, val, prefixed);
-	
+
 	if(noreflow.indexOf(style) === -1) {
 		clearTimeout(this.reformatTimeout);
 		this.reformatTimeout = setTimeout(function(){

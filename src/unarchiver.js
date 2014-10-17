@@ -1,20 +1,22 @@
+//对javascript版的zip库进行了封装，主要是读取其中的xml文件
+//但是storage这块还是没搞清楚在哪里定义的
 EPUBJS.Unarchiver = function(url){
-	
+
 	this.libPath = EPUBJS.filePath;
 	this.zipUrl = url;
 	this.loadLib();
 	this.urlCache = {};
-	
+
 	this.zipFs = new zip.fs.FS();
-	
+
 	return this.promise;
-	
+
 };
 
 //-- Load the zip lib and set the workerScriptsPath
 EPUBJS.Unarchiver.prototype.loadLib = function(callback){
 	if(typeof(zip) == "undefined") console.error("Zip lib not loaded");
-	
+
 	/*
 	//-- load script
 	EPUBJS.core.loadScript(this.libPath+"zip.js", function(){
@@ -33,12 +35,12 @@ EPUBJS.Unarchiver.prototype.openZip = function(zipUrl, callback){
 	zipFs.importHttpContent(zipUrl, false, function() {
 		deferred.resolve(zipFs);
 	}, this.failed);
-	
+
 	return deferred.promise;
 };
 
 EPUBJS.Unarchiver.prototype.getXml = function(url, encoding){
-	
+
 	return this.getText(url, encoding).
 			then(function(text){
 				var parser = new DOMParser();
@@ -53,7 +55,7 @@ EPUBJS.Unarchiver.prototype.getUrl = function(url, mime){
 	var decodededUrl = window.decodeURIComponent(url);
 	var entry = this.zipFs.find(decodededUrl);
 	var _URL = window.URL || window.webkitURL || window.mozURL;
-	
+
 	if(!entry) {
 		deferred.reject({
 			message : "File not found in the epub: " + url,
@@ -61,7 +63,7 @@ EPUBJS.Unarchiver.prototype.getUrl = function(url, mime){
 		});
 		return deferred.promise;
 	}
-	
+
 	if(url in this.urlCache) {
 		deferred.resolve(this.urlCache[url]);
 		return deferred.promise;
@@ -119,18 +121,18 @@ EPUBJS.Unarchiver.prototype.toStorage = function(entries){
 		count--;
 		if(count === 0) that.afterSaved();
 	}
-		
+
 	entries.forEach(function(entry){
-		
+
 		setTimeout(function(entry){
 			that.saveEntryFileToStorage(entry, callback);
 		}, timeout, entry);
-		
+
 		timeout += delay;
 	});
-	
+
 	console.log("time", timeout);
-	
+
 	//entries.forEach(this.saveEntryFileToStorage.bind(this));
 };
 

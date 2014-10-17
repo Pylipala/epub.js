@@ -280,6 +280,7 @@ EPUBJS.core.prefixed = function(unprefixed) {
 	return unprefixed;
 };
 
+// 解析相对地址，如果path是绝对地址，直接返回
 EPUBJS.core.resolveUrl = function(base, path) {
 	var url,
 		segments = [],
@@ -388,7 +389,7 @@ EPUBJS.core.indexOfSorted = function(item, array, compareFunction, _start, _end)
 	}
 };
 
-
+//构造一个等待被调用的函数队列，每个出队的都被调用
 EPUBJS.core.queue = function(_scope){
 	var _q = [];
 	var scope = _scope;
