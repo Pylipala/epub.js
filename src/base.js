@@ -14,6 +14,7 @@ EPUBJS.Render = {};
 
 	var previousEpub = root.ePub || {};
 
+	//程序入口，构造一个book对象
 	var ePub = root.ePub = function() {
 		var bookPath, options;
 

@@ -320,6 +320,7 @@ EPUBJS.Book.prototype.unpack = function(packageXml){
 
 };
 
+//创建一个零大小的容器，里面装一个有大小的容器，用renderer对里面的容器进行初始化
 EPUBJS.Book.prototype.createHiddenRender = function(renderer, _width, _height) {
 	var box = this.element.getBoundingClientRect();
 	var width = _width || this.settings.width || box.width;
