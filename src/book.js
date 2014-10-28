@@ -354,12 +354,15 @@ EPUBJS.Book.prototype.createHiddenRender = function(renderer, _width, _height) {
 };
 
 // Generates the pageList array by loading every chapter and paging through them
+// 其实是得到一个pageList的承诺
 EPUBJS.Book.prototype.generatePageList = function(width, height){
 	var pageList = [];
+	// pager又是Renderer的别名，草
 	var pager = new EPUBJS.Renderer(this.settings.render_method, false); //hidden
 	var hiddenContainer = this.createHiddenRender(pager, width, height);
 	var deferred = new RSVP.defer();
 	var spinePos = -1;
+	// 不知道这个spine.length是从哪里来的
 	var spineLength = this.spine.length;
 	var totalPages = 0;
 	var currentPage = 0;
@@ -371,9 +374,14 @@ EPUBJS.Book.prototype.generatePageList = function(width, height){
 		if(next >= spineLength) {
 			done.resolve();
 		} else {
+			// 我说怎么没看到spinePos ++,原来是直接赋值next
 			spinePos = next;
+			// 既然一个循环对应一个Chapter，那么可以看出spine就是Chapter的别名了
 			chapter = new EPUBJS.Chapter(this.spine[spinePos], this.store);
+			// 这个函数返回promise的原因就在于displayChapter返回的是promise
+			// 一环是promise，就沦为promise
 			pager.displayChapter(chapter, this.globalLayoutProperties).then(function(chap){
+				// 参数chap被忽略，所以推断出这个地方的约定是：displayChapter完成后，pager的pageMap承载结果
 				pager.pageMap.forEach(function(item){
 					currentPage += 1;
 					pageList.push({
@@ -383,6 +391,7 @@ EPUBJS.Book.prototype.generatePageList = function(width, height){
 
 				});
 
+				// 如果某章是奇数页，而书本是展开的，补一页
 				if(pager.pageMap.length % 2 > 0 &&
 					 pager.spreads) {
 					currentPage += 1; // Handle Spreads
@@ -393,6 +402,9 @@ EPUBJS.Book.prototype.generatePageList = function(width, height){
 				}
 
 				// Load up the next chapter
+				// 通过setTimeout来加载下一章
+				// 为什么要这么做呢？为什么不直接调用呢？防止调用栈太深（等于章数）？
+				// 话说这里能够访问到nextChapter？我写js的递归都是补一个函数参数把自己传进去的。
 				setTimeout(function(){
 					nextChapter(done);
 				}, 1);
