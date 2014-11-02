@@ -129,26 +129,31 @@ EPUBJS.Book.prototype.open = function(bookPath, forceReload){
 			epubpackage,
 			opened = new RSVP.defer();
 
+  // 保存参数地址
 	this.settings.bookPath = bookPath;
 
 	//-- Get a absolute URL from the book path
+	// 相当于解析这个地址
 	this.bookUrl = this.urlFrom(bookPath);
 
 	if(this.settings.contained || this.isContained(bookPath)){
-
+		// 压缩格式
 		this.settings.contained = this.contained = true;
 
 		this.bookUrl = '';
 
-		epubpackage = this.unarchive(bookPath).
+		epubpackage = this.unarchive(bookPath). // 先解压
 			then(function(){
+				// 再load
 				return book.loadPackage();
 			});
 
 	}	else {
+		// 直接load
 		epubpackage = this.loadPackage();
 	}
 
+  // setting中指明要走本地恢复，并且不是强制刷新，还要浏览器有localStorage
 	if(this.settings.restore && !forceReload && localStorage){
 		//-- Will load previous package json, or re-unpack if error
 		epubpackage.then(function(packageXml) {
@@ -156,8 +161,10 @@ EPUBJS.Book.prototype.open = function(bookPath, forceReload){
 			var restored = book.restore(identifier);
 
 			if(!restored) {
+				// 本地恢复没成功，还是要unpack
 				book.unpack(packageXml);
 			}
+			// 返回的promise被解决，可以看做异步调用的终点
 			opened.resolve();
 			book.defer_opened.resolve();
 		});
@@ -416,6 +423,7 @@ EPUBJS.Book.prototype.generatePageList = function(width, height){
 	var finished = nextChapter().then(function(){
 		pager.remove();
 		this.element.removeChild(hiddenContainer);
+		// 看来最后得到的是一个{cfi,page}的数组
 		deferred.resolve(pageList);
 	}.bind(this));
 
@@ -428,9 +436,12 @@ EPUBJS.Book.prototype.generatePagination = function(width, height) {
 	var book = this;
 	var defered = new RSVP.defer();
 
+  // 章节ready之后，调上面的generatePageList
 	this.ready.spine.promise.then(function(){
 		book.generatePageList(width, height).then(function(pageList){
+			// 保存下来
 			book.pageList = book.contents.pageList = pageList;
+			// 处理一下，好像是建了个表啥的
 			book.pagination.process(pageList);
 			book.ready.pageList.resolve(book.pageList);
 			defered.resolve(book.pageList);
@@ -445,6 +456,7 @@ EPUBJS.Book.prototype.loadPagination = function(pagelistJSON) {
 	var pageList = JSON.parse(pagelistJSON);
 
 	if(pageList && pageList.length) {
+		// 这里的处理和上面的相比少了保存到this.contents.pageList，这是为什么呢？
 		this.pageList = pageList;
 		this.pagination.process(this.pageList);
 		this.ready.pageList.resolve(this.pageList);
@@ -483,6 +495,7 @@ EPUBJS.Book.prototype.networkListeners = function(){
 };
 
 // Listen to all events the renderer triggers and pass them as book events
+// 把所有renderer发出的事件通过book发出去，对rangeChanged事件特别关照包装了一下
 EPUBJS.Book.prototype.listenToRenderer = function(renderer){
 	var book = this;
 	renderer.Events.forEach(function(eventName){
@@ -522,6 +535,7 @@ EPUBJS.Book.prototype.listenToRenderer = function(renderer){
 
 // Listens for load events from the Renderer and checks against the current chapter
 // Prevents the Render from loading a different chapter when back button is pressed
+// 这个应该是跳转到另一章
 EPUBJS.Book.prototype.loadChange = function(url){
 	var uri = EPUBJS.core.uri(url);
 	var chapter;
@@ -536,6 +550,7 @@ EPUBJS.Book.prototype.loadChange = function(url){
 	}
 };
 
+//
 EPUBJS.Book.prototype.unlistenToRenderer = function(renderer){
 	renderer.Events.forEach(function(eventName){
 		renderer.off(eventName);
@@ -543,6 +558,7 @@ EPUBJS.Book.prototype.unlistenToRenderer = function(renderer){
 };
 
 //-- Choose between a request from store or a request from network
+// 根据设置从不同的地方拿文件，storage，zip，或者server
 EPUBJS.Book.prototype.loadXml = function(url){
 	if(this.settings.fromStorage) {
 		return this.storage.getXml(url, this.settings.encoding);
@@ -577,6 +593,7 @@ EPUBJS.Book.prototype.urlFrom = function(bookPath){
 	}
 
 	//-- 2. Check if url starts with /, add base url
+	// 有意思伐啦，上面看的是uri.protocol，这里又看absolute，其实是一个东西
 	if(!absolute && fromRoot){
 		return (base || origin) + uri.path;
 	}
@@ -605,6 +622,7 @@ EPUBJS.Book.prototype.unarchive = function(bookPath){
 };
 
 //-- Checks if url has a .epub or .zip extension
+// 原来是通过后缀判断的哦
 EPUBJS.Book.prototype.isContained = function(bookUrl){
 	var uri = EPUBJS.core.uri(bookUrl);
 
@@ -619,6 +637,8 @@ EPUBJS.Book.prototype.isContained = function(bookUrl){
 EPUBJS.Book.prototype.isSaved = function(bookKey) {
 	var storedSettings;
 
+	// 这里localStorage不是没定义嘛
+	// 哦我知道了，这是浏览器的关键字，和window一样
 	if(!localStorage) {
 		return false;
 	}
@@ -634,10 +654,13 @@ EPUBJS.Book.prototype.isSaved = function(bookKey) {
 };
 
 // Generates the Book Key using the identifer in the manifest or other string provided
+// 生成书的唯一key，加入了版本号
 EPUBJS.Book.prototype.generateBookKey = function(identifier){
 	return "epubjs:" + EPUBJS.VERSION + ":" + window.location.host + ":" + identifier;
 };
 
+// 保存书到localStorage，看来书的内容都在contents里面
+// 假定bookKey已经生成好了
 EPUBJS.Book.prototype.saveContents = function(){
 	if(!localStorage) {
 		return false;
@@ -655,6 +678,8 @@ EPUBJS.Book.prototype.removeSavedContents = function() {
 
 
 //-- Takes a string or a element
+// open之后，进行渲染，参数要么是dom元素或者其id
+// 话说原来这个才是真的入口
 EPUBJS.Book.prototype.renderTo = function(elem){
 	var book = this,
 		rendered;
@@ -672,6 +697,7 @@ EPUBJS.Book.prototype.renderTo = function(elem){
 				then(function(){
 					// book.render = new EPUBJS.Renderer[this.settings.renderer](book);
 					book.renderer.initialize(book.element, book.settings.width, book.settings.height);
+					// renderer初始化之后还进行了两项操作
 					book._rendered();
 					return book.startDisplay();
 				});
@@ -681,6 +707,7 @@ EPUBJS.Book.prototype.renderTo = function(elem){
 	return rendered;
 };
 
+// renderer初始化之后跳转到指定的goto或者上次阅读到的地方
 EPUBJS.Book.prototype.startDisplay = function(){
 	var display;
 
@@ -695,6 +722,7 @@ EPUBJS.Book.prototype.startDisplay = function(){
 	return display;
 };
 
+// 从localStorage恢复
 EPUBJS.Book.prototype.restore = function(identifier){
 
 	var book = this,
@@ -746,6 +774,7 @@ EPUBJS.Book.prototype.displayChapter = function(chap, end, deferred){
 	var chapter;
 
 	if(!this.isRendered) {
+		// 由于还没渲染好，先把请求记下，承诺失败
 		this._q.enqueue("displayChapter", arguments);
 		// Reject for now. TODO: pass promise to queue
 		defer.reject({
@@ -756,8 +785,11 @@ EPUBJS.Book.prototype.displayChapter = function(chap, end, deferred){
 	}
 
 
+  // 这个判断怎么这么妖怪
+	// 看来flag用多了确实不好懂，上面的isRendered和_rendering有关系么？
 	if(this._rendering || this._rendering) {
 		// Pass along the current defer
+		// 为什么上面用arguments，这里偷换了第3个参数，哦，原来是差不多的啊
 		this._displayQ.enqueue("displayChapter", [chap, end, defer]);
 		return defer.promise;
 	}
@@ -846,6 +878,7 @@ EPUBJS.Book.prototype.nextChapter = function() {
 	var next;
 	if (this.spinePos < this.spine.length - 1) {
 		next = this.spinePos + 1;
+		// 寻找下一章，跳过那些不是linear的章，啥意思呢？
 		while (this.spine[next] && this.spine[next].linear && this.spine[next].linear == 'no') {
 			next++;
 		}
@@ -886,12 +919,16 @@ EPUBJS.Book.prototype.getCurrentLocationCfi = function() {
 EPUBJS.Book.prototype.goto = function(target){
 
 	if(target.indexOf("epubcfi(") === 0) {
+		// CFI
 		return this.gotoCfi(target);
 	} else if(target.indexOf("%") === target.length-1) {
+		// 百分比
 		return this.gotoPercentage(parseInt(target.substring(0, target.length-1))/100);
 	} else if(typeof target === "number" || isNaN(target) === false){
+		// 页码
 		return this.gotoPage(target);
-	} else {
+	} else
+		// 链接
 		return this.gotoHref(target);
 	}
 
@@ -902,6 +939,7 @@ EPUBJS.Book.prototype.gotoCfi = function(cfiString, defer){
 			spinePos,
 			spineItem,
 			rendered,
+			// 我有点搞不懂为什么defer可能是从外面传进来的
 			deferred = defer || new RSVP.defer();
 
 	if(!this.isRendered) {
@@ -943,6 +981,7 @@ EPUBJS.Book.prototype.gotoCfi = function(cfiString, defer){
 
 		if(this.currentChapter) {
 			this.spinePos = spinePos;
+			// 最终都还是通过renderer来完成的，汗。。。
 			render = this.renderer.displayChapter(this.currentChapter, this.globalLayoutProperties);
 
 			this.renderer.gotoCfi(cfi);
@@ -1040,7 +1079,7 @@ EPUBJS.Book.prototype.preloadNextChapter = function() {
 	}
 };
 
-
+// 离线保存？
 EPUBJS.Book.prototype.storeOffline = function() {
 	var book = this,
 		assets = _.values(this.manifest);
@@ -1091,6 +1130,7 @@ EPUBJS.Book.prototype.setStyle = function(style, val, prefixed) {
 
 	this.renderer.setStyle(style, val, prefixed);
 
+  // 为什么这3个style要特殊处理？
 	if(noreflow.indexOf(style) === -1) {
 		clearTimeout(this.reformatTimeout);
 		this.reformatTimeout = setTimeout(function(){
